@@ -1,14 +1,16 @@
-from sympy.physics.secondquant import NO
-
 
 class TreeItem(object):
     def __init__(self, data=None, parent=None):
         self.parentItem = parent
         self.itemData = data
         self.childItems = []
+        self.value = None
 
     def appendChild(self, item):
         self.childItems.append(item)
+
+    def setValue(self, value):
+        self.value = value
 
     def child(self, row):
         return self.childItems[row]
@@ -22,10 +24,13 @@ class TreeItem(object):
     def data(self, column):
         if column == 0:
             return self.itemData
-        # try:
-        #     return self.itemData[column]
-        # except IndexError:
-        #     return None
+
+        if column == 1:
+            try:
+                return self.value
+            except IndexError:
+                return None
+
 
     def parent(self):
         return self.parentItem

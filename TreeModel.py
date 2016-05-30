@@ -1,4 +1,5 @@
 from PyQt5 import QtCore
+from PyQt5.QtCore import QJsonDocument, QJsonValue
 
 from TreeItem import TreeItem, RootItem
 
@@ -7,20 +8,83 @@ class TreeModel(QtCore.QAbstractItemModel):
     def __init__(self, data, parent=None):
         super(TreeModel, self).__init__(parent)
 
-        self.rootItem = RootItem(1)
-        item_1 = TreeItem('l1_1', self.rootItem)
-        item_1.appendChild(TreeItem('l2_1', item_1))
-        item_1.appendChild(TreeItem('l2_2', item_1))
-        item_1.appendChild(TreeItem('l2_3', item_1))
+        self.rootItem = RootItem(2)
+        self.get_type(data, self.rootItem)
 
-        self.rootItem.appendChild(item_1)
+        # # self.rootItem = RootItem(1)
+        # item_1 = TreeItem('l1_1', self.rootItem)
+        # item_1.appendChild(TreeItem('l2_1', item_1))
+        # item_1.appendChild(TreeItem('l2_2', item_1))
+        # item_1.appendChild(TreeItem('l2_3', item_1))
+        #
+        # self.rootItem.appendChild(item_1)
+        #
+        #
+        # item_2 = TreeItem('l1_2', self.rootItem)
+        # self.rootItem.appendChild(item_2)
+        #
+        # item_3 = TreeItem('l1_3', self.rootItem)
+        # self.rootItem.appendChild(item_3)
+        # # self.setupModelData(data.split('\n'), self.rootItem)
 
-        item_2 = TreeItem('l1_2', self.rootItem)
-        self.rootItem.appendChild(item_2)
+    @staticmethod
+    def get_type(json_document, root_item):
 
-        item_3 = TreeItem('l1_3', self.rootItem)
-        self.rootItem.appendChild(item_3)
-        # self.setupModelData(data.split('\n'), self.rootItem)
+        if isinstance(json_document, QJsonValue):
+            if json_document.isBool():
+                name = 'True' if json_document.isBool() else 'False'
+                root_item.setValue(name)
+                return
+
+            if json_document.isDouble():
+                name = str(json_document.toDouble())
+                root_item.setValue(name)
+                return
+
+            if json_document.isNull():
+                name = 'None'
+                root_item.setValue(name)
+                return
+
+            if json_document.isString():
+                name = json_document.toString()
+                root_item.setValue(name)
+                return
+
+        if json_document.isArray():
+            array_item = TreeItem('array', root_item)
+            array = None
+            if isinstance(json_document, QJsonDocument):
+                array = json_document.array()
+            elif isinstance(json_document, QJsonValue):
+                array = json_document.toArray()
+
+            for el in array:
+                TreeModel.get_type(el, array_item)
+
+            root_item.appendChild(array_item)
+            return
+
+        if json_document.isNull():
+            name = 'None'
+            root_item.appendChild(TreeItem(name, root_item))
+            return
+
+        if json_document.isObject():
+            json_document_object = None
+            if isinstance(json_document, QJsonDocument):
+                json_document_object = json_document.object()
+            elif isinstance(json_document, QJsonValue):
+                json_document_object = json_document.toObject()
+
+            for obj in json_document_object:
+                obj_item = TreeItem(obj, root_item)
+                TreeModel.get_type(json_document_object[obj], obj_item)
+                root_item.appendChild(obj_item)
+
+            return
+
+        return
 
     def columnCount(self, parent):
         if parent.isValid():
